@@ -14,12 +14,11 @@ FAIFWM (Fuck AI Fucking With Music) is a distributed ML engine designed to proac
 ## 3. Infrastructure & Environment Strategy
 The system is designed to detect hardware at runtime and adjust execution strategy to balance speed and memory safety.
 
-| Feature | Development (ROG Laptop) | Production (Dedicated Cloud) |
-| :--- | :--- | :--- |
-| **Primary GPU** | NVIDIA RTX 4060 (8GB VRAM) | NVIDIA RTX 3090/4090 (24GB VRAM) |
-| **Precision** | `float32` | `bfloat16` (Speed Optimized) |
-| **Execution** | **Chunked Mode:** 30s sliding windows | **Global Mode:** Full waveform tensor |
-| **Networking** | Local Network / WSL2 | Dedicated Fiber / 1Gbps Symmetric |
+| Tier | Hardware Context | Execution Strategy | Role in Pipeline |
+| :--- | :--- | :--- | :--- |
+| **Development** | ROG Laptop (RTX 4060 - 8GB) | Chunked (30s windows), `float32` | Local API/ML core development. |
+| **Staging/Harvester** | Bare Metal (RTX 3050 - 8GB) | Chunked (30s windows), `float32` | 24/7 continuous dataset harvesting and VRAM edge-case testing. |
+| **Production** | Cloud Dedicated (RTX 3090 - 24GB) | Global (Full Waveform), `bfloat16` | Public-facing gRPC worker; high-speed artist fulfillment. |
 
 ## 4. Phase 1: Core Protection Engine (The "Shield")
 The ML core executes adversarial noise generation directly on the raw waveform.
@@ -45,12 +44,13 @@ Orchestrates the asynchronous routing of large audio payloads and real-time stat
 * **Flow:** Returns a `Job_ID` and hands off the file path to the Worker via gRPC.
 * **Status:** `GET /api/v1/stream/{job_id}` initializes the SSE `StreamingResponse`.
 
-### 5.2. Internal Orchestration (gRPC)
-* **Protocol:** gRPC Server Streaming.
+### 5.2. Internal Orchestration & Client Streaming
+* **Protocol:** gRPC Server Streaming between the Gateway and isolated GPU Workers.
 * **Worker Response:** Yields `OptimizationStatus` messages containing `current_step`, `total_steps`, and `loss_metrics`.
-* **Gateway Role:** Translates gRPC messages into SSE JSON packets for the React frontend.
+* **Universal API Hand-off:** The Gateway translates gRPC messages into universal SSE JSON packets. This ensures real-time feedback is identical whether the request originates from the React Web Client or the FAIFWM Desktop App.
 
-## 6. Phase 3 Preparation: Data Harvesting
-Upon completion of the PGD loop, the worker node archives a 1:1 pairing of `[Clean_Stem.wav]` and `[Protected_Stem.wav]`.
-* **Harvesting:** Automatically indexed by `User_ID` and `Timestamp`.
-* **Future Utility:** This dataset provides the ground truth required to train the real-time U-Net VST/AU plugin (Phase 3).
+## 6. Phase 3 Preparation: The Data Flywheel
+Upon completion of the PGD loop, the worker node archives a bit-perfect 1:1 pairing of `[Clean_Stem.wav]` and `[Protected_Stem.wav]`.
+* **Harvesting:** Automatically indexed securely via `User_ID` and `Timestamp`.
+* **Amortized Optimization:** This dataset provides the ground truth required to train a fast, predictive U-Net. 
+* **The Endgame:** By training a lightweight inference model on this proprietary dataset, FAIFWM will eventually shift from a 15-minute cloud compute bottleneck to a 10-millisecond local desktop process, ensuring total data sovereignty for the artist.
