@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package faifwm.orchestration;
+
+// The core service for processing audio protections
+service OptimizationService {
+  // Submit an audio file for PGD processing and receive a stream of statuses
+  rpc ProtectAudio (ProtectionRequest) returns (stream OptimizationStatus) {}
+}
+
+message ProtectionRequest {
+  string job_id = 1;
+  string file_path = 2; // Path to the file on the shared volume
+  string user_id = 3;   // Metadata for Data Harvesting
+}
+
+message OptimizationStatus {
+  string job_id = 1;
+  
+  enum StatusEnum {
+    PENDING = 0;
+    PROCESSING = 1;
+    COMPLETED = 2;
+    FAILED = 3;
+  }
+  StatusEnum status = 2;
+  
+  int32 current_step = 3;
+  int32 total_steps = 4;
+  
+  // Specific Loss Metrics
+  float reconstruction_loss = 5;
+  float perceptual_loss = 6;
+  float distortion_loss = 7;
+  float opinion_loss = 8;
+  
+  // Final output path when complete
+  string protected_file_path = 9;
+  string error_message = 10;
+}
